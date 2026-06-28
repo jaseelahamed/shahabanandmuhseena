@@ -3,14 +3,12 @@ import {
   MapPin,
   Calendar,
   Clock,
-  Heart,
-  Volume2,
   VolumeX,
   Play,
-  MessageCircle,
   CheckCircle2,
   XCircle,
-  ChevronsDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function App() {
@@ -21,16 +19,13 @@ export default function App() {
     seconds: 0,
   });
   const [musicPlaying, setMusicPlaying] = useState(false);
-  const [isOpened, setIsOpened] = useState(false);
-  const [isOpening, setIsOpening] = useState(false);
+  const [currentPage, setCurrentPage] = useState(-1); // -1 = Welcome Overlay, 0 = Cover, 1 = Page 1, 2 = Page 2, 3 = Page 3
+  const [isOpeningCover, setIsOpeningCover] = useState(false);
+  const [slideDirection, setSlideDirection] = useState("right"); // 'right' or 'left'
   const [showConfetti, setShowConfetti] = useState(false);
   const audioRef = useRef(null);
 
-  // PLACE YOUR SONG URL HERE (Direct MP3 link)
-  // const audioSource = "https://drive.google.com/file/d/1fMo_LfhODhWE5LM3XyRby2sZXocQYsTB/view?usp=drivesdk";
   const audioSource = "/wedding-song.mp3";
-  const mapLink =
-    "https://www.google.com/maps/dir/?api=1&destination=Kairali+Auditorium%2C+Parasseri%2C+Poozhikunnu%2C+B.P.+Angadi%2C+Tirur%2C+Kerala+676102&travelmode=driving";
   const whatsappNumber = "917736948494";
   const messageYes =
     "Assalamu Alaikum, I am confirming my presence for Shahaban & Muhseena Wedding! Looking forward to it.";
@@ -49,33 +44,13 @@ export default function App() {
           minutes: Math.floor((difference / 1000 / 60) % 60),
           seconds: Math.floor((difference / 1000) % 60),
         });
+      } else {
+        clearInterval(timer);
       }
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    if (!isOpened) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.05 }
-    );
-
-    const elements = document.querySelectorAll(".reveal-on-scroll, .reveal-scale");
-    elements.forEach((el) => observer.observe(el));
-
-    return () => {
-      elements.forEach((el) => observer.unobserve(el));
-    };
-  }, [isOpened]);
   const handleNavigate = () => {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser");
@@ -85,14 +60,12 @@ export default function App() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
+        const destLat = 10.9029;
+        const destLng = 75.9268;
 
-        const destination =
-          "Kairali Auditorium, Parasseri, Poozhikunnu, B.P. Angadi, Tirur, Kerala 676102";
-
-        const mapUrl =
-          `https://www.google.com/maps/dir/?api=1` +
+        const mapUrl = `https://www.google.com/maps/dir/?api=1` +
           `&origin=${latitude},${longitude}` +
-          `&destination=${encodeURIComponent(destination)}` +
+          `&destination=${destLat},${destLng}` +
           `&travelmode=driving`;
 
         window.open(mapUrl, "_blank");
@@ -103,24 +76,18 @@ export default function App() {
       },
     );
   };
-  const handleOpen = async () => {
-    setIsOpening(true);
 
-    try {
-      if (audioRef.current) {
-        await audioRef.current.play();
-        setMusicPlaying(true);
-      }
-    } catch (err) {
-      console.error("Play failed:", err);
-    }
+  const handleOpenCover = async () => {
+    setIsOpeningCover(true);
+    setShowConfetti(true);
+    setTimeout(() => setShowConfetti(false), 8000); // Clear confetti after 8 seconds
 
     setTimeout(() => {
-      setIsOpened(true);
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 8000); // Stop confetti after 8 seconds
-    }, 1000);
+      setCurrentPage(1);
+      setIsOpeningCover(false);
+    }, 1200); // Match 3D book cover open transition
   };
+
   const toggleMusic = () => {
     if (musicPlaying) {
       audioRef.current.pause();
@@ -128,6 +95,16 @@ export default function App() {
       audioRef.current.play();
     }
     setMusicPlaying(!musicPlaying);
+  };
+
+  const nextPage = () => {
+    setSlideDirection("right");
+    setCurrentPage((prev) => Math.min(prev + 1, 3));
+  };
+
+  const prevPage = () => {
+    setSlideDirection("left");
+    setCurrentPage((prev) => Math.max(prev - 1, 0));
   };
 
   return (
@@ -143,13 +120,13 @@ export default function App() {
       {/* Falling Rose Petals & Gold Confetti */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {Array.from({ length: 30 }).map((_, i) => {
-            const size = Math.random() * 12 + 10; // 10px to 22px
-            const left = Math.random() * 100; // 0% to 100%
-            const delay = Math.random() * 5; // 0s to 5s delay
-            const duration = Math.random() * 5 + 4; // 4s to 9s duration
+          {Array.from({ length: 35 }).map((_, i) => {
+            const size = Math.random() * 12 + 10;
+            const left = Math.random() * 100;
+            const delay = Math.random() * 5;
+            const duration = Math.random() * 5 + 4;
             const type = Math.random() > 0.5 ? "petal" : "gold";
-            
+
             return (
               <div
                 key={i}
@@ -171,13 +148,9 @@ export default function App() {
         </div>
       )}
 
-      {/* Welcome Screen Overlay */}
-      {!isOpened && (
-        <div
-          className={`fixed inset-0 bg-[#F5F1E9] flex items-center justify-center p-6 text-center z-50 overflow-hidden transition-all duration-1000 ease-in-out ${
-            isOpening ? "opacity-0 pointer-events-none" : "opacity-100"
-          }`}
-        >
+      {/* Welcome Screen Overlay (Bismillah Card) */}
+      {currentPage === -1 && (
+        <div className="fixed inset-0 bg-[#F5F1E9] flex items-center justify-center p-6 text-center z-50 overflow-hidden">
           {/* Background Decorative Pattern */}
           <div
             className="absolute inset-0 opacity-10 pointer-events-none"
@@ -188,19 +161,12 @@ export default function App() {
           ></div>
 
           {/* Center Card */}
-          <div
-            className={`max-w-md w-full bg-white/90 backdrop-blur-md border border-[#C5A04F]/30 p-10 md:p-12 rounded-3xl shadow-2xl relative z-10 transition-all duration-1000 ease-in-out ${
-              isOpening ? "opacity-0 scale-95" : "opacity-100 scale-100"
-            }`}
-          >
+          <div className="max-w-md w-full bg-white/90 backdrop-blur-md border border-[#C5A04F]/30 p-10 md:p-12 rounded-3xl shadow-2xl relative z-10">
             {/* Islamic Dome & Crescent/Star Emblem */}
             <div className="flex justify-center mb-6">
               <svg className="w-16 h-16 text-[#C5A04F]" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5">
-                {/* Dome Arch */}
                 <path d="M50,15 C65,35 80,45 80,75 C80,85 75,85 50,85 C25,85 20,85 20,75 C20,45 35,35 50,15 Z" />
-                {/* Crescent Moon */}
                 <path d="M48,45 A6,6 0 1 1 54,51 A4.5,4.5 0 1 0 48,45 Z" fill="currentColor" stroke="none" />
-                {/* Small Star */}
                 <polygon points="56,46 57,48 59,48 57.5,49.5 58,51.5 56,50.2 54,51.5 54.5,49.5 53,48 55,48" fill="currentColor" stroke="none" />
               </svg>
             </div>
@@ -218,7 +184,17 @@ export default function App() {
               We cordially invite you to our wedding.
             </p>
             <button
-              onClick={handleOpen}
+              onClick={() => {
+                try {
+                  if (audioRef.current) {
+                    audioRef.current.play();
+                    setMusicPlaying(true);
+                  }
+                } catch (err) {
+                  console.error("Play failed:", err);
+                }
+                setCurrentPage(0); // transition to book cover page
+              }}
               className="flex items-center gap-2 mx-auto bg-[#5C7347] text-white px-10 py-4 rounded-full hover:bg-[#485b37] hover:scale-105 transition-all shadow-lg text-lg font-medium cursor-pointer"
             >
               <Play size={22} className="fill-white" /> Open Invitation
@@ -227,240 +203,268 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Content (Conditional) */}
-      {(isOpened || isOpening) && (
-        <>
-          {/* Decorative Border */}
-          <div className="fixed inset-4 border-[1px] border-[#C5A04F]/20 pointer-events-none z-40"></div>
-
-      <button
-        onClick={toggleMusic}
-        className="fixed bottom-6 right-6 z-50 bg-[#5C7347] text-white p-4 rounded-full shadow-lg hover:scale-110 transition-all flex items-center justify-center gap-1"
-        style={{ width: "56px", height: "56px" }}
-      >
-        {musicPlaying ? (
-          <div className="flex items-end gap-[3px] h-5 w-5 justify-center">
-            <span className="w-[3px] bg-white rounded-full animate-bar-1 h-full"></span>
-            <span className="w-[3px] bg-white rounded-full animate-bar-2 h-full"></span>
-            <span className="w-[3px] bg-white rounded-full animate-bar-3 h-full"></span>
-          </div>
-        ) : (
-          <VolumeX size={24} />
-        )}
-      </button>
-
-      {/* Gently Floating Background Leaves */}
-      {isOpened && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 select-none">
-          {/* Leaf 1 (Top Right) */}
-          <div className="absolute top-48 -right-8 opacity-25 animate-float" style={{ animationDelay: "0s", animationDuration: "7s" }}>
-            <svg className="w-16 h-16 text-[#5C7347] fill-current transform rotate-45" viewBox="0 0 24 24">
-              <path d="M21 3C21 3 14 3.5 9 8.5C4 13.5 3 21 3 21C3 21 10.5 20 15.5 15C20.5 10 21 3 21 3ZM12.5 15.5C10.5 15.5 8.5 14.5 7 13C6.5 12.5 6.5 11.5 7 11C7.5 10.5 8.5 10.5 9 11C10 12 11.5 12.5 12.5 12.5C13.5 12.5 14 12 14.5 11.5C15 11 15.5 10 15.5 9C15.5 8 15 6.5 14 5.5C13.5 5 13.5 4 14 3.5C14.5 3 15.5 3 16 3.5C17.5 5 18.5 7 18.5 9C18.5 11 17.5 13 15.5 15C14.5 15.5 13.5 15.5 12.5 15.5Z" />
+      {/* Pages >= 0: Interactive Open Book Layout */}
+      {currentPage >= 0 && (
+        <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-[#F5F1E9]">
+          {/* Slow Spinning Background Mandala Watermark */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-10 overflow-hidden">
+            <svg className="w-[180vw] h-[180vw] md:w-[85vh] md:h-[85vh] text-[#C5A04F] stroke-current fill-none animate-spin" style={{ animationDuration: "180s" }} strokeWidth="0.5" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" />
+              <circle cx="50" cy="50" r="38" />
+              <circle cx="50" cy="50" r="28" />
+              <polygon points="50,5 62,38 95,50 62,62 50,95 38,62 5,50 38,38" />
+              <polygon points="50,15 59,41 85,50 59,59 50,85 41,59 15,50 41,41" />
+              <polygon points="50,5 62,38 95,50 62,62 50,95 38,62 5,50 38,38" transform="rotate(22.5 50 50)" />
+              <polygon points="50,5 62,38 95,50 62,62 50,95 38,62 5,50 38,38" transform="rotate(45 50 50)" />
+              <polygon points="50,5 62,38 95,50 62,62 50,95 38,62 5,50 38,38" transform="rotate(67.5 50 50)" />
+              <path d="M50,35 C52,42 58,48 50,50 C42,48 48,42 50,35 Z" transform="rotate(0 50 50)" />
+              <path d="M50,35 C52,42 58,48 50,50 C42,48 48,42 50,35 Z" transform="rotate(30 50 50)" />
+              <path d="M50,35 C52,42 58,48 50,50 C42,48 48,42 50,35 Z" transform="rotate(60 50 50)" />
+              <path d="M50,35 C52,42 58,48 50,50 C42,48 48,42 50,35 Z" transform="rotate(90 50 50)" />
+              <path d="M50,35 C52,42 58,48 50,50 C42,48 48,42 50,35 Z" transform="rotate(120 50 50)" />
+              <path d="M50,35 C52,42 58,48 50,50 C42,48 48,42 50,35 Z" transform="rotate(150 50 50)" />
+              <path d="M50,35 C52,42 58,48 50,50 C42,48 48,42 50,35 Z" transform="rotate(180 50 50)" />
             </svg>
           </div>
-          {/* Leaf 2 (Mid Left) */}
-          <div className="absolute top-[80vh] -left-8 opacity-20 animate-float" style={{ animationDelay: "1.5s", animationDuration: "9s" }}>
-            <svg className="w-20 h-20 text-[#5C7347] fill-current transform -rotate-45" viewBox="0 0 24 24">
-              <path d="M21 3C21 3 14 3.5 9 8.5C4 13.5 3 21 3 21C3 21 10.5 20 15.5 15C20.5 10 21 3 21 3ZM12.5 15.5C10.5 15.5 8.5 14.5 7 13C6.5 12.5 6.5 11.5 7 11C7.5 10.5 8.5 10.5 9 11C10 12 11.5 12.5 12.5 12.5C13.5 12.5 14 12 14.5 11.5C15 11 15.5 10 15.5 9C15.5 8 15 6.5 14 5.5C13.5 5 13.5 4 14 3.5C14.5 3 15.5 3 16 3.5C17.5 5 18.5 7 18.5 9C18.5 11 17.5 13 15.5 15C14.5 15.5 13.5 15.5 12.5 15.5Z" />
-            </svg>
-          </div>
-          {/* Leaf 3 (Bottom Right) */}
-          <div className="absolute bottom-[60vh] -right-12 opacity-25 animate-float" style={{ animationDelay: "3s", animationDuration: "8s" }}>
-            <svg className="w-24 h-24 text-[#5C7347] fill-current transform rotate-[120deg]" viewBox="0 0 24 24">
-              <path d="M21 3C21 3 14 3.5 9 8.5C4 13.5 3 21 3 21C3 21 10.5 20 15.5 15C20.5 10 21 3 21 3ZM12.5 15.5C10.5 15.5 8.5 14.5 7 13C6.5 12.5 6.5 11.5 7 11C7.5 10.5 8.5 10.5 9 11C10 12 11.5 12.5 12.5 12.5C13.5 12.5 14 12 14.5 11.5C15 11 15.5 10 15.5 9C15.5 8 15 6.5 14 5.5C13.5 5 13.5 4 14 3.5C14.5 3 15.5 3 16 3.5C17.5 5 18.5 7 18.5 9C18.5 11 17.5 13 15.5 15C14.5 15.5 13.5 15.5 12.5 15.5Z" />
-            </svg>
-          </div>
-          {/* Leaf 4 (Bottom Left) */}
-          <div className="absolute bottom-48 -left-6 opacity-20 animate-float" style={{ animationDelay: "4.5s", animationDuration: "10s" }}>
-            <svg className="w-14 h-14 text-[#5C7347] fill-current transform rotate-[30deg]" viewBox="0 0 24 24">
-              <path d="M21 3C21 3 14 3.5 9 8.5C4 13.5 3 21 3 21C3 21 10.5 20 15.5 15C20.5 10 21 3 21 3ZM12.5 15.5C10.5 15.5 8.5 14.5 7 13C6.5 12.5 6.5 11.5 7 11C7.5 10.5 8.5 10.5 9 11C10 12 11.5 12.5 12.5 12.5C13.5 12.5 14 12 14.5 11.5C15 11 15.5 10 15.5 9C15.5 8 15 6.5 14 5.5C13.5 5 13.5 4 14 3.5C14.5 3 15.5 3 16 3.5C17.5 5 18.5 7 18.5 9C18.5 11 17.5 13 15.5 15C14.5 15.5 13.5 15.5 12.5 15.5Z" />
-            </svg>
-          </div>
-        </div>
-      )}
 
-      <header className="custome-bg min-h-screen flex flex-col items-center justify-center p-6 text-center relative">
-        {/* <div className="space-y-6 animate-in fade-in duration-1000 bg-white/80 backdrop-blur-md p-10 md:p-16 rounded-3xl border border-[#C5A04F]/30 max-w-xl mx-auto shadow-2xl relative z-10">
-          <div className="absolute top-3 left-3 w-6 h-6 border-t border-l border-[#C5A04F]/40"></div>
-          <div className="absolute top-3 right-3 w-6 h-6 border-t border-r border-[#C5A04F]/40"></div>
-          <div className="absolute bottom-3 left-3 w-6 h-6 border-b border-l border-[#C5A04F]/40"></div>
-          <div className="absolute bottom-3 right-3 w-6 h-6 border-b border-r border-[#C5A04F]/40"></div>
-
-          <p className="text-xs uppercase tracking-[0.2em] text-[#A7B39E] font-semibold font-sans">Save The Date</p>
-          <h1 className="text-2xl text-[#5C7347] font-display font-bold">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</h1>
-          <div className="text-6xl md:text-7xl font-cursive text-[#5C7347] py-6 leading-normal font-medium">
-            Shahaban <br />
-            <span className="text-4xl font-serif text-[#C5A04F] block my-2 font-normal">&</span>
-            Muhseena
-          </div>
-          <p className="text-[#A7B39E] italic text-lg mt-4">We are getting married!</p>
-        </div> */}
-
-        {/* Bouncing Scroll Down Arrow */}
-        <button
-          onClick={() => {
-            const contentSection = document.getElementById("wedding-content");
-            if (contentSection) {
-              contentSection.scrollIntoView({ behavior: "smooth" });
-            }
-          }}
-          className="absolute bottom-8 left-8 text-[#5C7347] cursor-pointer focus:outline-none z-30"
-        >
-          <div className="w-10 h-10 border border-[#5C7347]/30 rounded-full flex items-center justify-center bg-[#F5F1E9]/60 backdrop-blur-sm shadow-sm animate-bounce hover:bg-[#E8EDE5] transition-colors">
-            <ChevronsDown size={20} className="stroke-[1.5] animate-pulse" />
-          </div>
-        </button>
-      </header>
-
-      <section id="wedding-content" className="py-16 px-6 reveal-on-scroll">
-        <div className="max-w-xl mx-auto grid grid-cols-4 gap-4">
-          {[
-            { val: timeLeft.days, label: "Days" },
-            { val: timeLeft.hours, label: "Hours" },
-            { val: timeLeft.minutes, label: "Min" },
-            { val: timeLeft.seconds, label: "Sec" },
-          ].map((t, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center p-4 bg-[#E8EDE5] rounded-xl shadow-sm"
-            >
-              <span className="text-2xl font-bold text-[#5C7347]">{t.val}</span>
-              <span className="text-[10px] uppercase tracking-widest text-[#A7B39E]">
-                {t.label}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="py-10 px-4 reveal-on-scroll">
-        <div className="max-w-lg mx-auto bg-white p-8 rounded-2xl shadow-xl border border-[#C5A04F]/20">
-          <h2 className="text-3xl font-display font-bold text-[#5C7347] mb-8 text-center border-b border-[#C5A04F]/30 pb-4">
-            Wedding Details
-          </h2>
-
-          {/* Venue Illustration Preview */}
-          <div className="w-full h-32 bg-[#E8EDE5] rounded-xl overflow-hidden mb-6 relative flex items-center justify-center border border-[#5C7347]/10">
-            {/* Decorative grid pattern in background */}
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#5C7347 1px, transparent 1px)", backgroundSize: "10px 10px" }} />
-            {/* Golden Islamic arch outline with a pin in the center */}
-            <svg className="w-24 h-24 text-[#C5A04F]/60" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1">
-              <path d="M50,15 C65,35 80,45 80,75 C80,85 75,85 50,85 C25,85 20,85 20,75 C20,45 35,35 50,15 Z" />
-              <path d="M50,35 C42,35 36,41 36,49 C36,59 50,71 50,71 C50,71 64,59 64,49 C64,41 58,35 50,35 Z" fill="#5C7347" className="text-[#5C7347] opacity-80" stroke="none" />
-              <circle cx="50" cy="47" r="4" fill="#F5F1E9" stroke="none" />
-            </svg>
-            {/* Text label */}
-            <div className="absolute bottom-2 right-3 text-[10px] uppercase tracking-widest text-[#5C7347]/70 font-sans font-bold">
-              Kairali Venue
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <div className="flex items-center gap-4">
-              <div className="bg-[#E8EDE5] p-3 rounded-full text-[#5C7347]">
-                <Calendar />
+          {/* Music Visualizer Widget (Fixed Top-Right) */}
+          <button
+            onClick={toggleMusic}
+            className="fixed top-6 right-6 z-50 bg-[#5C7347] text-white p-3 rounded-full shadow-lg hover:scale-110 transition-all flex items-center justify-center gap-1"
+            style={{ width: "46px", height: "46px" }}
+          >
+            {musicPlaying ? (
+              <div className="flex items-end gap-[2px] h-4 w-4 justify-center">
+                <span className="w-[2.5px] bg-white rounded-full animate-bar-1 h-full"></span>
+                <span className="w-[2.5px] bg-white rounded-full animate-bar-2 h-full"></span>
+                <span className="w-[2.5px] bg-white rounded-full animate-bar-3 h-full"></span>
               </div>
-              <p className="font-sans font-semibold text-lg text-[#5C7347]">Monday, July 20th, 2026</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="bg-[#E8EDE5] p-3 rounded-full text-[#5C7347]">
-                <Clock />
-              </div>
-              <p className="font-sans font-semibold text-lg text-[#5C7347]">11:30 AM - 3:30 PM</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="bg-[#E8EDE5] p-3 rounded-full text-[#5C7347]">
-                <MapPin />
-              </div>
-              <div>
-                <p className="font-display font-bold text-xl text-[#5C7347] mb-1">Kairali Auditorium</p>
-                <p className="text-sm text-[#A7B39E] font-sans font-semibold">
-                  Parasseri, Poozhikunnu, B.P. Angadi, Tirur, Kerala 676102
-                </p>
-              </div>
-            </div>
+            ) : (
+              <VolumeX size={20} />
+            )}
+          </button>
+
+          {/* Book Wrapper with 3D Perspective */}
+          <div className="max-w-md w-full relative z-10 flex flex-col justify-between min-h-[75vh] md:min-h-[80vh] book-perspective">
             
-            {/* Add to Calendar Button */}
-            <a
-              href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Shahaban+%26+Muhseena+Wedding&dates=20260720T060000Z/20260720T100000Z&details=You+are+cordially+invited+to+the+wedding+of+Shahaban+%26+Muhseena+at+Kairali+Auditorium%2C+Parasseri%2C+Poozhikunnu.&location=Kairali+Auditorium%2C+Parasseri%2C+Poozhikunnu%2C+B.P.+Angadi%2C+Tirur%2C+Kerala+676102"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 border border-[#C5A04F]/40 text-[#5C7347] font-sans font-bold text-sm rounded-xl hover:bg-[#E8EDE5] transition-colors"
-            >
-              <Calendar size={16} /> Add to Google Calendar
-            </a>
+            {/* The Active Inside Page (Always rendered as backing canvas for opening animation) */}
+            <div className="absolute inset-0 flex flex-col justify-between bg-white rounded-3xl shadow-2xl border border-[#C5A04F]/30 p-6 md:p-8 paper-page z-10">
+              {/* Book Corner Golden Filigrees */}
+              <div className="absolute top-4 left-4 w-6 h-6 border-t border-l border-[#C5A04F]/40 rounded-tl-lg pointer-events-none"></div>
+              <div className="absolute top-4 right-4 w-6 h-6 border-t border-r border-[#C5A04F]/40 rounded-tr-lg pointer-events-none"></div>
+              <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-[#C5A04F]/40 rounded-bl-lg pointer-events-none"></div>
+              <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-[#C5A04F]/40 rounded-br-lg pointer-events-none"></div>
 
-            <button
-              onClick={handleNavigate}
-              className="block w-full py-4 bg-[#5C7347] text-white text-center rounded-xl font-sans font-bold tracking-wider text-base hover:bg-[#485b37] transition-colors cursor-pointer"
-            >
-              Navigate to Venue
-            </button>
-          </div>
-        </div>
-      </section>
+              {/* Subtle Book Spine Divider */}
+              <div className="absolute inset-y-0 left-1/2 w-[1px] bg-gradient-to-r from-transparent via-[#5C7347]/10 to-transparent pointer-events-none"></div>
 
-      <section className="py-10 px-4 bg-gradient-to-b from-[#F5F1E9] to-[#E8EDE5] text-center reveal-scale">
-        <div className="max-w-3xl mx-auto">
-          <div className="mb-8">
-            <p className="uppercase tracking-[0.2em] text-xs text-[#C5A04F] mb-3 font-sans font-bold">
-              RSVP
-            </p>
+              {/* Header: Page Navigation Display */}
+              <div className="flex justify-between items-center border-b border-[#C5A04F]/20 pb-3 mb-6 relative z-10">
+                <span className="text-[10px] tracking-[0.2em] font-sans font-bold text-[#A7B39E] uppercase">
+                  Wedding Invite
+                </span>
+                <span className="text-xs font-sans font-bold text-[#C5A04F]">
+                  Page {currentPage === 0 ? 1 : currentPage} of 3
+                </span>
+              </div>
 
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-[#5C7347] mb-4">
-              Will You Be Joining Us?
-            </h2>
-
-            <p className="text-[#A7B39E] italic text-lg font-serif">
-              In Sha Allah, your presence will make our celebration even more
-              special.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-3xl shadow-xl border border-[#C5A04F]/20 p-8 md:p-10">
-            <div className="text-5xl mb-4">🤍</div>
-
-            <p className="text-[#3B4830] leading-relaxed mb-8 font-sans font-semibold text-base">
-              We would be honored to celebrate this joyful occasion with you.
-              Kindly let us know whether you will be able to attend.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-5 justify-center">
-              <a
-                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageYes)}`}
-                className="group flex items-center justify-center gap-3 bg-[#25D366] text-white px-10 py-5 rounded-2xl text-lg font-bold shadow-lg hover:scale-105 transition-all duration-300 font-sans"
+              {/* Page Content Viewport with 3D Page Turn transition */}
+              <div
+                className={`flex-grow flex flex-col justify-center relative z-10 ${
+                  slideDirection === "right" ? "animate-flip-next" : "animate-flip-prev"
+                }`}
+                key={currentPage}
               >
-                <CheckCircle2 size={26} />
-                Yes, In Sha Allah
-              </a>
+                {/* Page 1: Welcome & Countdown */}
+                {(currentPage === 0 || currentPage === 1) && (
+                  <div className="text-center space-y-6">
+                    <div className="flex justify-center">
+                      <svg className="w-12 h-12 text-[#C5A04F]" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M50,15 C65,35 80,45 80,75 C80,85 75,85 50,85 C25,85 20,85 20,75 C20,45 35,35 50,15 Z" />
+                        <path d="M48,45 A6,6 0 1 1 54,51 A4.5,4.5 0 1 0 48,45 Z" fill="currentColor" stroke="none" />
+                      </svg>
+                    </div>
+                    <p className="text-xl md:text-2xl text-[#C5A04F] font-serif mb-2 tracking-wide font-medium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7B39E] font-bold font-sans">Save The Date</p>
+                    <h2 className="text-4xl md:text-5xl font-cursive text-[#5C7347] leading-tight">
+                      Shahaban & Muhseena
+                    </h2>
+                    <p className="text-[#3B4830] font-sans font-semibold text-xs max-w-xs mx-auto leading-relaxed">
+                      We cordially invite you to celebrate our union and witness our wedding day.
+                    </p>
 
-              <a
-                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageNo)}`}
-                className="group flex items-center justify-center gap-3 bg-white text-[#5C7347] px-10 py-5 rounded-2xl text-lg font-bold border-2 border-[#5C7347] shadow-lg hover:bg-[#E8EDE5] hover:scale-105 transition-all duration-300 font-sans"
-              >
-                <XCircle size={26} />
-                Unable to Attend
-              </a>
+                    <div className="pt-2">
+                      <p className="text-[9px] tracking-[0.2em] text-[#C5A04F] font-sans font-bold uppercase mb-2">Countdown</p>
+                      <div className="grid grid-cols-4 gap-2 max-w-[280px] mx-auto">
+                        {[
+                          { val: timeLeft.days, label: "Days" },
+                          { val: timeLeft.hours, label: "Hrs" },
+                          { val: timeLeft.minutes, label: "Min" },
+                          { val: timeLeft.seconds, label: "Sec" },
+                        ].map((t, i) => (
+                          <div key={i} className="flex flex-col items-center p-2 bg-[#E8EDE5] rounded-lg shadow-sm border border-[#5C7347]/10">
+                            <span className="text-lg font-bold font-sans text-[#5C7347]">{String(t.val).padStart(2, "0")}</span>
+                            <span className="text-[8px] font-sans text-[#A7B39E] font-semibold">{t.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Page 2: Details & Venue Maps */}
+                {currentPage === 2 && (
+                  <div className="space-y-4">
+                    <h3 className="text-xl font-display font-bold text-[#5C7347] text-center mb-1">
+                      Wedding Details
+                    </h3>
+
+                    <div className="w-full h-24 bg-[#E8EDE5] rounded-xl overflow-hidden relative flex items-center justify-center border border-[#5C7347]/10">
+                      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#5C7347 1px, transparent 1px)", backgroundSize: "10px 10px" }} />
+                      <svg className="w-16 h-16 text-[#C5A04F]/60" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1">
+                        <path d="M50,15 C65,35 80,45 80,75 C80,85 75,85 50,85 C25,85 20,85 20,75 C20,45 35,35 50,15 Z" />
+                        <path d="M50,35 C42,35 36,41 36,49 C36,59 50,71 50,71 C50,71 64,59 64,49 C64,41 58,35 50,35 Z" fill="#5C7347" className="text-[#5C7347] opacity-80" stroke="none" />
+                        <circle cx="50" cy="47" r="4" fill="#F5F1E9" stroke="none" />
+                      </svg>
+                    </div>
+
+                    <div className="space-y-2.5 font-sans">
+                      <div className="flex items-center gap-3 p-2 bg-[#F5F1E9]/50 rounded-xl border border-[#C5A04F]/10">
+                        <Calendar size={16} className="text-[#5C7347]" />
+                        <p className="font-semibold text-xs text-[#5C7347]">Monday, July 20th, 2026</p>
+                      </div>
+                      <div className="flex items-center gap-3 p-2 bg-[#F5F1E9]/50 rounded-xl border border-[#C5A04F]/10">
+                        <Clock size={16} className="text-[#5C7347]" />
+                        <p className="font-semibold text-xs text-[#5C7347]">11:30 AM - 3:30 PM</p>
+                      </div>
+                      <div className="flex gap-3 p-2 bg-[#F5F1E9]/50 rounded-xl border border-[#C5A04F]/10">
+                        <MapPin size={16} className="text-[#5C7347] shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-xs text-[#5C7347]">Kairali Auditorium</p>
+                          <p className="text-[10px] text-[#A7B39E] font-semibold mt-0.5 leading-normal">
+                            Parasseri, Poozhikunnu, B.P. Angadi, Tirur, Kerala 676102
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <a
+                        href="https://calendar.google.com/calendar/render?action=TEMPLATE&text=Shahaban+%26+Muhseena+Wedding&dates=20260720T060000Z/20260720T100000Z&details=You+are+cordially+invited+to+the+wedding+of+Shahaban+%26+Muhseena+at+Kairali+Auditorium%2C+Parasseri%2C+Poozhikunnu.&location=Kairali+Auditorium%2C+Parasseri%2C+Poozhikunnu%2C+B.P.+Angadi%2C+Tirur%2C+Kerala+676102"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 py-2.5 border border-[#C5A04F]/40 text-[#5C7347] font-bold text-xs rounded-xl hover:bg-[#E8EDE5] transition-colors"
+                      >
+                        <Calendar size={14} /> Add Calendar
+                      </a>
+                      <button
+                        onClick={handleNavigate}
+                        className="flex items-center justify-center gap-1.5 py-2.5 bg-[#5C7347] text-white font-bold text-xs rounded-xl hover:bg-[#485b37] transition-colors cursor-pointer"
+                      >
+                        <MapPin size={14} /> Navigate Map
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Page 3: RSVP Actions */}
+                {currentPage === 3 && (
+                  <div className="text-center space-y-4">
+                    <div>
+                      <p className="uppercase tracking-[0.2em] text-[9px] text-[#C5A04F] mb-0.5 font-sans font-bold">
+                        RSVP
+                      </p>
+                      <h3 className="text-2xl font-display font-bold text-[#5C7347]">
+                        Will You Attend?
+                      </h3>
+                    </div>
+
+                    <p className="text-[#3B4830] leading-relaxed font-sans font-semibold text-xs max-w-xs mx-auto">
+                      Kindly let us know if you can join. We would be honored to celebrate this special day with you.
+                    </p>
+
+                    <div className="flex flex-col gap-2.5 py-1">
+                      <a
+                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageYes)}`}
+                        className="flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-all duration-300 font-sans"
+                      >
+                        <CheckCircle2 size={16} />
+                        Yes, In Sha Allah
+                      </a>
+                      <a
+                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageNo)}`}
+                        className="flex items-center justify-center gap-2 bg-white text-[#5C7347] py-3 rounded-xl text-sm font-bold border border-[#5C7347] shadow-sm hover:bg-[#E8EDE5] hover:scale-105 transition-all duration-300 font-sans"
+                      >
+                        <XCircle size={16} />
+                        Unable to Attend
+                      </a>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#C5A04F]/20">
+                      <p className="text-[#A7B39E] italic font-serif text-sm">
+                        "Your presence is our greatest gift."
+                      </p>
+                      <p className="text-3xl font-cursive text-[#C5A04F] mt-1 capitalize tracking-wide font-medium leading-none">
+                        Shahaban & Muhseena
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer Navigation controls */}
+              <div className="flex justify-between items-center border-t border-[#C5A04F]/20 pt-4 mt-6 relative z-10">
+                <button
+                  onClick={prevPage}
+                  disabled={currentPage === 0}
+                  className={`flex items-center gap-1 text-[#5C7347] font-sans font-bold text-xs uppercase tracking-wider transition-opacity cursor-pointer ${
+                    currentPage === 0 ? "opacity-30 pointer-events-none" : "hover:text-[#485b37]"
+                  }`}
+                >
+                  <ChevronLeft size={16} /> Back
+                </button>
+
+                <button
+                  onClick={nextPage}
+                  disabled={currentPage === 3 || currentPage === 0}
+                  className={`flex items-center gap-1 text-[#5C7347] font-sans font-bold text-xs uppercase tracking-wider transition-opacity cursor-pointer ${
+                    currentPage === 3 || currentPage === 0 ? "opacity-30 pointer-events-none" : "hover:text-[#485b37]"
+                  }`}
+                >
+                  Next <ChevronRight size={16} />
+                </button>
+              </div>
             </div>
 
-            <div className="mt-10 pt-6 border-t border-[#C5A04F]/20">
-              <p className="text-[#A7B39E] italic font-serif text-lg">
-                "Your presence is our greatest gift."
-              </p>
+            {/* Book Cover Card Overlay (z-20) - Placed directly on top of Page 1. Tapping flips it open to the left */}
+            {currentPage === 0 && (
+              <div
+                onClick={handleOpenCover}
+                className={`absolute inset-0 rounded-3xl shadow-2xl z-20 overflow-hidden border border-[#C5A04F]/20 book-cover-wrapper flex flex-col justify-end p-8 cursor-pointer ${
+                  isOpeningCover ? "book-cover-open" : ""
+                }`}
+                style={{
+                  backgroundImage: "url('/bg4.webp')",
+                  backgroundSize: "100% 100%",
+                  backgroundPosition: "center",
+                }}
+              >
+                {/* Tap to Open Hint */}
+                <div className="mb-4 text-center">
+                  <p className="text-xs uppercase tracking-[0.15em] text-[#5C7347] font-sans font-bold bg-[#F5F1E9]/90 border border-[#C5A04F]/30 py-2 px-4 rounded-full inline-block shadow-md animate-pulse">
+                    📖 Tap Cover to Open
+                  </p>
+                </div>
+              </div>
+            )}
 
-              <p className="text-4xl font-cursive text-[#C5A04F] mt-3 tracking-wide capitalize leading-normal font-medium">
-                Shahaban & Muhseena
-              </p>
-            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Developer Credit Footer */}
-      <footer className="py-8 text-center text-xs text-[#A7B39E] font-sans tracking-widest opacity-60">
-        <p>Created with 🤍 by Jaseel</p>
-      </footer>
-        </>
+          {/* Credits footer */}
+          <footer className="mt-6 text-center text-[10px] text-[#A7B39E] font-sans tracking-widest opacity-60 relative z-10">
+            <p>Created with 🤍 by Jaseel</p>
+          </footer>
+        </div>
       )}
     </div>
   );
