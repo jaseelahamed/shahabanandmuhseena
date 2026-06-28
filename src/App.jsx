@@ -275,8 +275,6 @@ export default function App() {
               <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-[#C5A04F]/40 rounded-bl-lg pointer-events-none z-35"></div>
               <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-[#C5A04F]/40 rounded-br-lg pointer-events-none z-35"></div>
 
-              {/* Subtle Book Spine Divider */}
-              <div className="absolute inset-y-0 left-1/2 w-[1px] bg-gradient-to-r from-transparent via-[#5C7347]/10 to-transparent pointer-events-none z-35"></div>
 
               {/* Header: Page Navigation Display */}
               <div className="absolute top-6 left-6 right-6 flex justify-between items-center border-b border-[#C5A04F]/20 pb-3 z-35 pointer-events-none">
