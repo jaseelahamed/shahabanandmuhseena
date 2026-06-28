@@ -23,7 +23,28 @@ export default function App() {
   const [isOpeningCover, setIsOpeningCover] = useState(false);
   const [slideDirection, setSlideDirection] = useState("right"); // 'right' or 'left'
   const [showConfetti, setShowConfetti] = useState(false);
+  const [particles, setParticles] = useState([]);
   const audioRef = useRef(null);
+
+  useEffect(() => {
+    // Generate static particles once on mount (falling snowflakes only)
+    const generated = Array.from({ length: 45 }).map((_, i) => {
+      // 70% White snowflakes, 30% Gold snowflakes
+      const color = Math.random() > 0.3 ? "#FFFFFF" : "#C5A04F";
+
+      return {
+        id: i,
+        size: Math.random() * 10 + 8, // 8px to 18px (delicate snow size)
+        left: Math.random() * 100,
+        delay: Math.random() * -15, // Spreads them vertically on mount
+        duration: Math.random() * 6 + 10, // Slower fall (10s to 16s)
+        color,
+        rotation: Math.random() * 360,
+        opacity: Math.random() * 0.5 + 0.4,
+      };
+    });
+    setParticles(generated);
+  }, []);
 
   const audioSource = "/wedding-song.mp3";
   const whatsappNumber = "917736948494";
@@ -52,35 +73,14 @@ export default function App() {
   }, []);
 
   const handleNavigate = () => {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        const destLat = 10.9029;
-        const destLng = 75.9268;
-
-        const mapUrl = `https://www.google.com/maps/dir/?api=1` +
-          `&origin=${latitude},${longitude}` +
-          `&destination=${destLat},${destLng}` +
-          `&travelmode=driving`;
-
-        window.open(mapUrl, "_blank");
-      },
-      (error) => {
-        alert("Please allow location access to get directions.");
-        console.error(error);
-      },
-    );
+    const destination = encodeURIComponent("Kairali Auditorium, Parasseri, Poozhikunnu, B.P. Angadi, Tirur, Kerala 676102");
+    const mapUrl = `https://www.google.com/maps/dir/Current+Location/${destination}`;
+    window.open(mapUrl, "_blank");
   };
 
   const handleOpenCover = async () => {
     setIsOpeningCover(true);
     setShowConfetti(true);
-    setTimeout(() => setShowConfetti(false), 8000); // Clear confetti after 8 seconds
 
     setTimeout(() => {
       setCurrentPage(1);
@@ -117,34 +117,54 @@ export default function App() {
         onError={(e) => console.log("Audio Error:", e)}
       />
 
-      {/* Falling Rose Petals & Gold Confetti */}
+      {/* Falling Snowflakes (Continuous) */}
       {showConfetti && (
         <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-          {Array.from({ length: 35 }).map((_, i) => {
-            const size = Math.random() * 12 + 10;
-            const left = Math.random() * 100;
-            const delay = Math.random() * 5;
-            const duration = Math.random() * 5 + 4;
-            const type = Math.random() > 0.5 ? "petal" : "gold";
+          {particles.map((p) => (
+            <div
+              key={p.id}
+              className="absolute top-[-30px] animate-fall"
+              style={{
+                left: `${p.left}%`,
+                width: `${p.size}px`,
+                height: `${p.size}px`,
+                opacity: p.opacity,
+                animationDelay: `${p.delay}s`,
+                animationDuration: `${p.duration}s`,
+                transform: `rotate(${p.rotation}deg)`,
+              }}
+            >
+              {/* Detailed Winter Snowflake SVG */}
+              <svg className="w-full h-full drop-shadow-sm" viewBox="0 0 100 100" style={{ color: p.color }}>
+                <path d="M50,10 L50,90 M10,50 L90,50 M22,22 L78,78 M22,78 L78,22" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                <path d="M50,30 L42,22 M50,30 L58,22 M50,70 L42,78 M50,70 L58,78 M30,50 L22,42 M30,50 L22,58 M70,50 L78,42 M70,50 L78,58" stroke="currentColor" strokeWidth="4" strokeLinecap="round" fill="none" />
+              </svg>
+            </div>
+          ))}
+        </div>
+      )}
 
-            return (
-              <div
-                key={i}
-                className="absolute top-[-30px] animate-fall"
-                style={{
-                  left: `${left}%`,
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  backgroundColor: type === "petal" ? "#ffccd5" : "#C5A04F",
-                  opacity: Math.random() * 0.5 + 0.5,
-                  animationDelay: `${delay}s`,
-                  animationDuration: `${duration}s`,
-                  borderRadius: type === "petal" ? "100% 0% 100% 100%" : "50%",
-                  transform: `rotate(${Math.random() * 360}deg)`,
-                }}
-              />
-            );
-          })}
+      {/* Accumulating Snow Drifts at the Bottom */}
+      {showConfetti && (
+        <div 
+          className={`fixed bottom-0 left-0 right-0 pointer-events-none z-40 transition-all duration-[20000ms] ease-out overflow-hidden ${
+            showConfetti ? "h-10 opacity-100" : "h-0 opacity-0"
+          }`}
+        >
+          <svg className="w-full h-full" viewBox="0 0 1000 100" preserveAspectRatio="none">
+            {/* Back Snow Drift */}
+            <path 
+              d="M0,80 Q250,40 500,70 T1000,60 L1000,100 L0,100 Z" 
+              fill="#E8EDE5" 
+              opacity="0.75" 
+            />
+            {/* Front Snow Drift */}
+            <path 
+              d="M0,90 Q150,60 400,80 T1000,70 L1000,100 L0,100 Z" 
+              fill="#FFFFFF" 
+              opacity="0.95" 
+            />
+          </svg>
         </div>
       )}
 
@@ -248,18 +268,18 @@ export default function App() {
           <div className="max-w-md w-full relative z-10 flex flex-col justify-between min-h-[75vh] md:min-h-[80vh] book-perspective">
             
             {/* The Active Inside Page (Always rendered as backing canvas for opening animation) */}
-            <div className="absolute inset-0 flex flex-col justify-between bg-white rounded-3xl shadow-2xl border border-[#C5A04F]/30 p-6 md:p-8 paper-page z-10">
+            <div className="absolute inset-0 bg-[#F5F1E9] rounded-3xl shadow-2xl border border-[#C5A04F]/30 paper-page z-10 overflow-hidden">
               {/* Book Corner Golden Filigrees */}
-              <div className="absolute top-4 left-4 w-6 h-6 border-t border-l border-[#C5A04F]/40 rounded-tl-lg pointer-events-none"></div>
-              <div className="absolute top-4 right-4 w-6 h-6 border-t border-r border-[#C5A04F]/40 rounded-tr-lg pointer-events-none"></div>
-              <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-[#C5A04F]/40 rounded-bl-lg pointer-events-none"></div>
-              <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-[#C5A04F]/40 rounded-br-lg pointer-events-none"></div>
+              <div className="absolute top-4 left-4 w-6 h-6 border-t border-l border-[#C5A04F]/40 rounded-tl-lg pointer-events-none z-35"></div>
+              <div className="absolute top-4 right-4 w-6 h-6 border-t border-r border-[#C5A04F]/40 rounded-tr-lg pointer-events-none z-35"></div>
+              <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-[#C5A04F]/40 rounded-bl-lg pointer-events-none z-35"></div>
+              <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-[#C5A04F]/40 rounded-br-lg pointer-events-none z-35"></div>
 
-            
-              <div className="absolute inset-y-0 left-1/2 w-[1px] bg-gradient-to-r from-transparent via-[#5C7347]/10 to-transparent pointer-events-none"></div>
+              {/* Subtle Book Spine Divider */}
+              <div className="absolute inset-y-0 left-1/2 w-[1px] bg-gradient-to-r from-transparent via-[#5C7347]/10 to-transparent pointer-events-none z-35"></div>
 
-           
-              <div className="flex justify-between items-center border-b border-[#C5A04F]/20 pb-3 mb-6 relative z-10">
+              {/* Header: Page Navigation Display */}
+              <div className="absolute top-6 left-6 right-6 flex justify-between items-center border-b border-[#C5A04F]/20 pb-3 z-35 pointer-events-none">
                 <span className="text-[10px] tracking-[0.2em] font-sans font-bold text-[#A7B39E] uppercase">
                   Wedding Invite
                 </span>
@@ -268,52 +288,63 @@ export default function App() {
                 </span>
               </div>
 
-           
-              <div
-                className={`flex-grow flex flex-col justify-center relative z-10 ${
-                  slideDirection === "right" ? "animate-flip-next" : "animate-flip-prev"
-                }`}
-                key={currentPage}
-              >
-                {/* Page 1: Welcome & Countdown */}
-                {(currentPage === 0 || currentPage === 1) && (
-                  <div className="text-center space-y-6">
-                    <div className="flex justify-center">
-                      <svg className="w-12 h-12 text-[#C5A04F]" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M50,15 C65,35 80,45 80,75 C80,85 75,85 50,85 C25,85 20,85 20,75 C20,45 35,35 50,15 Z" />
-                        <path d="M48,45 A6,6 0 1 1 54,51 A4.5,4.5 0 1 0 48,45 Z" fill="currentColor" stroke="none" />
-                      </svg>
+              {/* Page Content Viewport with 3D overlapping stack */}
+              <div className="absolute inset-0 z-10">
+                
+                {/* Page 3 Layer (RSVP Actions - Bottom of the Stack) */}
+                <div 
+                  className="absolute inset-0 flex flex-col justify-center bg-[#F5F1E9] p-6 md:p-8 pt-16 pb-20 book-page-layer book-page-closed"
+                  style={{ zIndex: 10 }}
+                >
+                  <div className="text-center space-y-4">
+                    <div>
+                      <p className="uppercase tracking-[0.2em] text-[9px] text-[#C5A04F] mb-0.5 font-sans font-bold">
+                        RSVP
+                      </p>
+                      <h3 className="text-2xl font-display font-bold text-[#5C7347]">
+                        Will You Attend?
+                      </h3>
                     </div>
-                    <p className="text-xl md:text-2xl text-[#C5A04F] font-serif mb-2 tracking-wide font-medium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7B39E] font-bold font-sans">Save The Date</p>
-                    <h2 className="text-4xl md:text-5xl font-cursive text-[#5C7347] leading-tight">
-                      Shahaban & Muhseena
-                    </h2>
-                    <p className="text-[#3B4830] font-sans font-semibold text-xs max-w-xs mx-auto leading-relaxed">
-                      We cordially invite you to celebrate our union and witness our wedding day.
+
+                    <p className="text-[#3B4830] leading-relaxed font-sans font-semibold text-xs max-w-xs mx-auto">
+                      Kindly let us know if you can join. We would be honored to celebrate this special day with you.
                     </p>
 
-                    <div className="pt-2">
-                      <p className="text-[9px] tracking-[0.2em] text-[#C5A04F] font-sans font-bold uppercase mb-2">Countdown</p>
-                      <div className="grid grid-cols-4 gap-2 max-w-[280px] mx-auto">
-                        {[
-                          { val: timeLeft.days, label: "Days" },
-                          { val: timeLeft.hours, label: "Hrs" },
-                          { val: timeLeft.minutes, label: "Min" },
-                          { val: timeLeft.seconds, label: "Sec" },
-                        ].map((t, i) => (
-                          <div key={i} className="flex flex-col items-center p-2 bg-[#E8EDE5] rounded-lg shadow-sm border border-[#5C7347]/10">
-                            <span className="text-lg font-bold font-sans text-[#5C7347]">{String(t.val).padStart(2, "0")}</span>
-                            <span className="text-[8px] font-sans text-[#A7B39E] font-semibold">{t.label}</span>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="flex flex-col gap-2.5 py-1">
+                      <a
+                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageYes)}`}
+                        className="flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-all duration-300 font-sans"
+                      >
+                        <CheckCircle2 size={16} />
+                        Yes, In Sha Allah
+                      </a>
+                      <a
+                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageNo)}`}
+                        className="flex items-center justify-center gap-2 bg-white text-[#5C7347] py-3 rounded-xl text-sm font-bold border border-[#5C7347] shadow-sm hover:bg-[#E8EDE5] hover:scale-105 transition-all duration-300 font-sans"
+                      >
+                        <XCircle size={16} />
+                        Unable to Attend
+                      </a>
+                    </div>
+
+                    <div className="pt-2 border-t border-[#C5A04F]/20">
+                      <p className="text-[#A7B39E] italic font-serif text-sm">
+                        "Your presence is our greatest gift."
+                      </p>
+                      <p className="text-3xl font-cursive text-[#C5A04F] mt-1 capitalize tracking-wide font-medium leading-none">
+                        Shahaban & Muhseena
+                      </p>
                     </div>
                   </div>
-                )}
+                </div>
 
-    
-                {currentPage === 2 && (
+                {/* Page 2 Layer (Details & Venue Maps - Middle of the Stack) */}
+                <div 
+                  className={`absolute inset-0 flex flex-col justify-center bg-[#F5F1E9] p-6 md:p-8 pt-16 pb-20 book-page-layer ${
+                    currentPage >= 3 ? "book-page-open" : "book-page-closed"
+                  }`}
+                  style={{ zIndex: 20 }}
+                >
                   <div className="space-y-4">
                     <h3 className="text-xl font-display font-bold text-[#5C7347] text-center mb-1">
                       Wedding Details
@@ -365,55 +396,54 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-                )}
+                </div>
 
-                {/* Page 3: RSVP Actions */}
-                {currentPage === 3 && (
-                  <div className="text-center space-y-4">
-                    <div>
-                      <p className="uppercase tracking-[0.2em] text-[9px] text-[#C5A04F] mb-0.5 font-sans font-bold">
-                        RSVP
-                      </p>
-                      <h3 className="text-2xl font-display font-bold text-[#5C7347]">
-                        Will You Attend?
-                      </h3>
+                {/* Page 1 Layer (Welcome & Countdown - Top of the Stack) */}
+                <div 
+                  className={`absolute inset-0 flex flex-col justify-center bg-[#F5F1E9] p-6 md:p-8 pt-16 pb-20 book-page-layer ${
+                    currentPage >= 2 ? "book-page-open" : "book-page-closed"
+                  }`}
+                  style={{ zIndex: 30 }}
+                >
+                  <div className="text-center space-y-6">
+                    <div className="flex justify-center">
+                      <svg className="w-12 h-12 text-[#C5A04F]" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <path d="M50,15 C65,35 80,45 80,75 C80,85 75,85 50,85 C25,85 20,85 20,75 C20,45 35,35 50,15 Z" />
+                        <path d="M48,45 A6,6 0 1 1 54,51 A4.5,4.5 0 1 0 48,45 Z" fill="currentColor" stroke="none" />
+                      </svg>
                     </div>
-
-                    <p className="text-[#3B4830] leading-relaxed font-sans font-semibold text-xs max-w-xs mx-auto">
-                      Kindly let us know if you can join. We would be honored to celebrate this special day with you.
+                    <p className="text-xl md:text-2xl text-[#C5A04F] font-serif mb-2 tracking-wide font-medium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#A7B39E] font-bold font-sans">Save The Date</p>
+                    <h2 className="text-4xl md:text-5xl font-cursive text-[#5C7347] leading-tight">
+                      Shahaban & Muhseena
+                    </h2>
+                    <p className="text-[#3B4830] font-sans font-semibold text-xs max-w-xs mx-auto leading-relaxed">
+                      We cordially invite you to celebrate our union and witness our wedding day.
                     </p>
 
-                    <div className="flex flex-col gap-2.5 py-1">
-                      <a
-                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageYes)}`}
-                        className="flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-xl text-sm font-bold shadow-md hover:scale-105 transition-all duration-300 font-sans"
-                      >
-                        <CheckCircle2 size={16} />
-                        Yes, In Sha Allah
-                      </a>
-                      <a
-                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(messageNo)}`}
-                        className="flex items-center justify-center gap-2 bg-white text-[#5C7347] py-3 rounded-xl text-sm font-bold border border-[#5C7347] shadow-sm hover:bg-[#E8EDE5] hover:scale-105 transition-all duration-300 font-sans"
-                      >
-                        <XCircle size={16} />
-                        Unable to Attend
-                      </a>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#C5A04F]/20">
-                      <p className="text-[#A7B39E] italic font-serif text-sm">
-                        "Your presence is our greatest gift."
-                      </p>
-                      <p className="text-3xl font-cursive text-[#C5A04F] mt-1 capitalize tracking-wide font-medium leading-none">
-                        Shahaban & Muhseena
-                      </p>
+                    <div className="pt-2">
+                      <p className="text-[9px] tracking-[0.2em] text-[#C5A04F] font-sans font-bold uppercase mb-2">Countdown</p>
+                      <div className="grid grid-cols-4 gap-2 max-w-[280px] mx-auto">
+                        {[
+                          { val: timeLeft.days, label: "Days" },
+                          { val: timeLeft.hours, label: "Hrs" },
+                          { val: timeLeft.minutes, label: "Min" },
+                          { val: timeLeft.seconds, label: "Sec" },
+                        ].map((t, i) => (
+                          <div key={i} className="flex flex-col items-center p-2 bg-[#E8EDE5] rounded-lg shadow-sm border border-[#5C7347]/10">
+                            <span className="text-lg font-bold font-sans text-[#5C7347]">{String(t.val).padStart(2, "0")}</span>
+                            <span className="text-[8px] font-sans text-[#A7B39E] font-semibold">{t.label}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                )}
+                </div>
+
               </div>
 
               {/* Footer Navigation controls */}
-              <div className="flex justify-between items-center border-t border-[#C5A04F]/20 pt-4 mt-6 relative z-10">
+              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-center border-t border-[#C5A04F]/20 pt-4 z-35">
                 <button
                   onClick={prevPage}
                   disabled={currentPage === 0}
