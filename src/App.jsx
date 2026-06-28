@@ -19,7 +19,7 @@ export default function App() {
     seconds: 0,
   });
   const [musicPlaying, setMusicPlaying] = useState(false);
-  const [currentPage, setCurrentPage] = useState(-1); // -1 = Welcome Overlay, 0 = Cover, 1 = Page 1, 2 = Page 2, 3 = Page 3
+  const [currentPage, setCurrentPage] = useState(0); // 0 = Cover, 1 = Page 1, 2 = Page 2, 3 = Page 3
   const [isOpeningCover, setIsOpeningCover] = useState(false);
   const [slideDirection, setSlideDirection] = useState("right"); // 'right' or 'left'
   const [showConfetti, setShowConfetti] = useState(false);
@@ -107,6 +107,69 @@ export default function App() {
     setCurrentPage((prev) => Math.max(prev - 1, 0));
   };
 
+  // Touch and Drag gesture tracking refs
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const isDragging = useRef(false);
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (isOpeningCover) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchStartX.current - touchEndX;
+    const deltaY = touchStartY.current - touchEndY;
+
+    // deltaX < 0 means slide right, deltaX > 0 means slide left
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 100) {
+      if (deltaX < 0) {
+        // Slide Right -> Next Page (per user request)
+        if (currentPage === 0) {
+          handleOpenCover();
+        } else {
+          nextPage();
+        }
+      } else {
+        // Slide Left -> Back Page
+        prevPage();
+      }
+    }
+  };
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest("button") || e.target.closest("a")) return;
+    touchStartX.current = e.clientX;
+    touchStartY.current = e.clientY;
+    isDragging.current = true;
+  };
+
+  const handleMouseUp = (e) => {
+    if (!isDragging.current || isOpeningCover) return;
+    isDragging.current = false;
+    
+    const deltaX = touchStartX.current - e.clientX;
+    const deltaY = touchStartY.current - e.clientY;
+
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 100) {
+      if (deltaX < 0) {
+        // Drag Right -> Next Page
+        if (currentPage === 0) {
+          handleOpenCover();
+        } else {
+          nextPage();
+        }
+      } else {
+        // Drag Left -> Back Page
+        prevPage();
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F5F1E9] text-[#2C3524] font-sans selection:bg-[#DCE5D8] relative overflow-x-hidden">
       <audio
@@ -168,64 +231,16 @@ export default function App() {
         </div>
       )}
 
-      {/* Welcome Screen Overlay (Bismillah Card) */}
-      {currentPage === -1 && (
-        <div className="fixed inset-0 bg-[#F5F1E9] flex items-center justify-center p-6 text-center z-50 overflow-hidden">
-          {/* Background Decorative Pattern */}
-          <div
-            className="absolute inset-0 opacity-10 pointer-events-none"
-            style={{
-              backgroundImage: "radial-gradient(#C5A04F 1px, transparent 1px)",
-              backgroundSize: "20px 20px",
-            }}
-          ></div>
-
-          {/* Center Card */}
-          <div className="max-w-md w-full bg-white/90 backdrop-blur-md border border-[#C5A04F]/30 p-10 md:p-12 rounded-3xl shadow-2xl relative z-10">
-            {/* Islamic Dome & Crescent/Star Emblem */}
-            <div className="flex justify-center mb-6">
-              <svg className="w-16 h-16 text-[#C5A04F]" viewBox="0 0 100 100" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M50,15 C65,35 80,45 80,75 C80,85 75,85 50,85 C25,85 20,85 20,75 C20,45 35,35 50,15 Z" />
-                <path d="M48,45 A6,6 0 1 1 54,51 A4.5,4.5 0 1 0 48,45 Z" fill="currentColor" stroke="none" />
-                <polygon points="56,46 57,48 59,48 57.5,49.5 58,51.5 56,50.2 54,51.5 54.5,49.5 53,48 55,48" fill="currentColor" stroke="none" />
-              </svg>
-            </div>
-
-            {/* Bismillah Calligraphy */}
-            <p className="text-2xl md:text-3xl text-[#C5A04F] font-serif mb-4 tracking-wide font-medium">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
-
-            <p className="text-xs uppercase tracking-[0.2em] text-[#A7B39E] mb-2 font-semibold font-sans">The Wedding Invitation of</p>
-            <h1 className="text-6xl md:text-7xl font-cursive text-[#5C7347] my-4 leading-normal font-medium">
-              Shahaban <br />
-              <span className="text-4xl font-serif text-[#C5A04F] block my-2 font-normal">&</span>
-              Muhseena
-            </h1>
-            <p className="text-[#A7B39E] italic mb-8 font-serif text-lg">
-              We cordially invite you to our wedding.
-            </p>
-            <button
-              onClick={() => {
-                try {
-                  if (audioRef.current) {
-                    audioRef.current.play();
-                    setMusicPlaying(true);
-                  }
-                } catch (err) {
-                  console.error("Play failed:", err);
-                }
-                setCurrentPage(0); // transition to book cover page
-              }}
-              className="flex items-center gap-2 mx-auto bg-[#5C7347] text-white px-10 py-4 rounded-full hover:bg-[#485b37] hover:scale-105 transition-all shadow-lg text-lg font-medium cursor-pointer"
-            >
-              <Play size={22} className="fill-white" /> Open Invitation
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Pages >= 0: Interactive Open Book Layout */}
       {currentPage >= 0 && (
-        <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-[#F5F1E9]">
+        <div 
+          className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden bg-[#F5F1E9]"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+        >
           {/* Slow Spinning Background Mandala Watermark */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-10 overflow-hidden">
             <svg className="w-[180vw] h-[180vw] md:w-[85vh] md:h-[85vh] text-[#C5A04F] stroke-current fill-none animate-spin" style={{ animationDuration: "180s" }} strokeWidth="0.5" viewBox="0 0 100 100">
