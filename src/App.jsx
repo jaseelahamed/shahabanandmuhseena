@@ -46,6 +46,33 @@ export default function App() {
     setParticles(generated);
   }, []);
 
+  // Autoplay music handler
+  useEffect(() => {
+    const playAudio = () => {
+      if (audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().then(() => {
+          setMusicPlaying(true);
+          document.removeEventListener("click", playAudio);
+          document.removeEventListener("touchstart", playAudio);
+        }).catch((err) => {
+          console.log("Autoplay prevented:", err);
+        });
+      }
+    };
+
+    // Attempt autoplay immediately
+    playAudio();
+
+    // Attach listeners for first user interaction (browser policy)
+    document.addEventListener("click", playAudio);
+    document.addEventListener("touchstart", playAudio);
+
+    return () => {
+      document.removeEventListener("click", playAudio);
+      document.removeEventListener("touchstart", playAudio);
+    };
+  }, []);
+
   const audioSource = "/wedding-song.mp3";
   const whatsappNumber = "917736948494";
   const messageYes =
@@ -483,7 +510,7 @@ export default function App() {
             {currentPage === 0 && (
               <div
                 onClick={handleOpenCover}
-                className={`absolute inset-0 rounded-3xl shadow-2xl z-20 overflow-hidden border border-[#C5A04F]/20 book-cover-wrapper flex flex-col justify-end p-8 cursor-pointer ${
+                className={`absolute inset-0 bg-[#F5F1E9] rounded-3xl shadow-2xl z-20 overflow-hidden border border-[#C5A04F]/20 book-cover-wrapper flex flex-col justify-end p-8 cursor-pointer ${
                   isOpeningCover ? "book-cover-open" : ""
                 }`}
                 style={{
