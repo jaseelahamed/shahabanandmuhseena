@@ -255,10 +255,10 @@ export default function App() {
               <div className="absolute bottom-4 left-4 w-6 h-6 border-b border-l border-[#C5A04F]/40 rounded-bl-lg pointer-events-none"></div>
               <div className="absolute bottom-4 right-4 w-6 h-6 border-b border-r border-[#C5A04F]/40 rounded-br-lg pointer-events-none"></div>
 
-              {/* Subtle Book Spine Divider */}
+            
               <div className="absolute inset-y-0 left-1/2 w-[1px] bg-gradient-to-r from-transparent via-[#5C7347]/10 to-transparent pointer-events-none"></div>
 
-              {/* Header: Page Navigation Display */}
+           
               <div className="flex justify-between items-center border-b border-[#C5A04F]/20 pb-3 mb-6 relative z-10">
                 <span className="text-[10px] tracking-[0.2em] font-sans font-bold text-[#A7B39E] uppercase">
                   Wedding Invite
@@ -268,7 +268,7 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Page Content Viewport with 3D Page Turn transition */}
+           
               <div
                 className={`flex-grow flex flex-col justify-center relative z-10 ${
                   slideDirection === "right" ? "animate-flip-next" : "animate-flip-prev"
@@ -312,7 +312,7 @@ export default function App() {
                   </div>
                 )}
 
-                {/* Page 2: Details & Venue Maps */}
+    
                 {currentPage === 2 && (
                   <div className="space-y-4">
                     <h3 className="text-xl font-display font-bold text-[#5C7347] text-center mb-1">
