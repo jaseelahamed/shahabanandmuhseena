@@ -119,12 +119,6 @@ export default function App() {
       setIsOpened(true);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 8000); // Stop confetti after 8 seconds
-      setTimeout(() => {
-        const contentSection = document.getElementById("wedding-content");
-        if (contentSection) {
-          contentSection.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 50);
     }, 1000);
   };
   const toggleMusic = () => {
@@ -233,8 +227,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Decorative Border */}
-      <div className="fixed inset-4 border-[1px] border-[#C5A04F]/20 pointer-events-none z-40"></div>
+      {/* Main Content (Conditional) */}
+      {(isOpened || isOpening) && (
+        <>
+          {/* Decorative Border */}
+          <div className="fixed inset-4 border-[1px] border-[#C5A04F]/20 pointer-events-none z-40"></div>
 
       <button
         onClick={toggleMusic}
@@ -300,11 +297,19 @@ export default function App() {
         </div> */}
 
         {/* Bouncing Scroll Down Arrow */}
-        <div className="absolute bottom-8 left-8 text-[#5C7347] pointer-events-none">
-          <div className="w-10 h-10 border border-[#5C7347]/30 rounded-full flex items-center justify-center bg-[#F5F1E9]/60 backdrop-blur-sm shadow-sm animate-bounce">
+        <button
+          onClick={() => {
+            const contentSection = document.getElementById("wedding-content");
+            if (contentSection) {
+              contentSection.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+          className="absolute bottom-8 left-8 text-[#5C7347] cursor-pointer focus:outline-none z-30"
+        >
+          <div className="w-10 h-10 border border-[#5C7347]/30 rounded-full flex items-center justify-center bg-[#F5F1E9]/60 backdrop-blur-sm shadow-sm animate-bounce hover:bg-[#E8EDE5] transition-colors">
             <ChevronsDown size={20} className="stroke-[1.5] animate-pulse" />
           </div>
-        </div>
+        </button>
       </header>
 
       <section id="wedding-content" className="py-16 px-6 reveal-on-scroll">
@@ -455,6 +460,8 @@ export default function App() {
       <footer className="py-8 text-center text-xs text-[#A7B39E] font-sans tracking-widest opacity-60">
         <p>Created with 🤍 by Jaseel</p>
       </footer>
+        </>
+      )}
     </div>
   );
 }
