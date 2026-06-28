@@ -293,7 +293,7 @@ export default function App() {
                 
                 {/* Page 3 Layer (RSVP Actions - Bottom of the Stack) */}
                 <div 
-                  className="absolute inset-0 flex flex-col justify-center bg-[#F5F1E9] p-6 md:p-8 pt-16 pb-20 book-page-layer book-page-closed"
+                  className="absolute inset-0 flex flex-col justify-center bg-white p-6 md:p-8 pt-16 pb-20 book-page-layer book-page-closed"
                   style={{ zIndex: 10 }}
                 >
                   <div className="text-center space-y-4">
@@ -340,7 +340,7 @@ export default function App() {
 
                 {/* Page 2 Layer (Details & Venue Maps - Middle of the Stack) */}
                 <div 
-                  className={`absolute inset-0 flex flex-col justify-center bg-[#F5F1E9] p-6 md:p-8 pt-16 pb-20 book-page-layer ${
+                  className={`absolute inset-0 flex flex-col justify-center bg-white p-6 md:p-8 pt-16 pb-20 book-page-layer ${
                     currentPage >= 3 ? "book-page-open" : "book-page-closed"
                   }`}
                   style={{ zIndex: 20 }}
@@ -400,7 +400,7 @@ export default function App() {
 
                 {/* Page 1 Layer (Welcome & Countdown - Top of the Stack) */}
                 <div 
-                  className={`absolute inset-0 flex flex-col justify-center bg-[#F5F1E9] p-6 md:p-8 pt-16 pb-20 book-page-layer ${
+                  className={`absolute inset-0 flex flex-col justify-center bg-white p-6 md:p-8 pt-16 pb-20 book-page-layer ${
                     currentPage >= 2 ? "book-page-open" : "book-page-closed"
                   }`}
                   style={{ zIndex: 30 }}
